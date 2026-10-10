@@ -63,6 +63,26 @@ kbd{font:600 11px var(--f-mono);border:1px solid currentColor;border-radius:4px;
 #links .badge{background:none;color:inherit;margin-right:4px;cursor:pointer}
 .conf{display:inline-flex;border-radius:999px;padding:3px 9px;background:var(--alert);color:#fff;font-weight:600;border:0}.conf[hidden]{display:none}
 .tag.confirmed{border-color:var(--ok);color:var(--ok)}.tag.conflict{background:var(--alert);color:#fff;border-color:var(--alert)}
+.tag.ut{border-color:var(--tc);color:var(--tc);background:color-mix(in srgb,var(--tc) 10%,transparent)}
+.tag.ut::before{content:"";width:6px;height:6px;border-radius:50%;background:var(--tc)}
+.task .snip{font-size:12px;color:var(--list-muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:1px}
+.task .mini{display:inline-flex;gap:5px;margin-left:8px;vertical-align:1px;color:var(--list-muted);font:600 10.5px var(--f-mono)}
+.task .mini svg{width:12px;height:12px;vertical-align:-2px}
+.task .mini .md{width:7px;height:7px;border-radius:50%;display:inline-block;align-self:center}
+.compact .task{min-height:0;padding:5px 8px}
+.tfilter{display:flex;flex-wrap:wrap;gap:6px;margin:6px 0 4px}
+.tfilter button{cursor:pointer}
+.tfilter button[aria-pressed=true]{background:var(--tc);color:#fff}
+.tagrow{display:grid;grid-template-columns:22px 1fr 110px 80px 90px;gap:8px;align-items:center;padding:4px 0;border-bottom:1px solid var(--list-line);font-size:12.5px}
+.tagrow input[type=text]{border:1px solid var(--list-line);background:transparent;border-radius:5px;padding:3px 6px;color:var(--list-ink);width:100%}
+.tagrow input[type=color]{width:22px;height:22px;border:0;padding:0;background:none}
+.tagrow.arch{opacity:.5}
+.pick{max-height:46vh;overflow:auto;margin-top:8px}
+.pick button{display:flex;width:100%;align-items:center;gap:8px;border:0;background:none;padding:5px 6px;border-radius:6px;color:var(--list-ink);text-align:left}
+.pick button.hi,.pick button:hover{background:color-mix(in srgb,var(--accent) 14%,transparent)}
+.pick .box{width:15px;height:15px;border:1.5px solid var(--tc);border-radius:4px;display:grid;place-items:center;font-size:11px;color:#fff}
+.pick button[aria-checked=true] .box{background:var(--tc)}
+.pick small{margin-left:auto;color:var(--list-muted);font-size:11px}
 .dot{background:var(--alert)}
 .dot{display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--ok)}
 .sheet{flex:1;min-height:0;display:flex;flex-direction:column;background:var(--list-bg);color:var(--list-ink);border-radius:var(--radius);border:var(--ov-border);box-shadow:var(--ov-shadow);backdrop-filter:var(--card-blur);position:relative;overflow:hidden;max-width:880px;width:100%;margin:0 auto}
@@ -183,6 +203,7 @@ ul.tasks{list-style:none;margin:0;padding:0}
   .overlay{padding-top:8vh}
   .triage .opts{grid-template-columns:repeat(2,1fr)}
   .kbonly{display:none}
+  #densBtn{display:none}
   .toasts{bottom:calc(140px + env(safe-area-inset-bottom))}
   .pgrid{grid-template-columns:1fr}
 }
@@ -271,6 +292,7 @@ html[data-family=orbital] .task .chk{border-radius:50%}
     <nav class="nav" id="nav"></nav>
     <div class="side-foot">
       <label class="sr" for="themeSel">Theme</label><select id="themeSel" title="Theme (` cycles)"></select>
+      <button class="iconbtn" id="densSide" title="Details: comfortable / compact" aria-label="Toggle details">≣</button>
       <button class="iconbtn" id="setBtn" title="Settings" aria-label="Settings">⚙</button>
       <button class="iconbtn" id="keysBtn" title="Keyboard shortcuts (?)" aria-label="Keyboard shortcuts">?</button>
     </div>
@@ -280,6 +302,7 @@ html[data-family=orbital] .task .chk{border-radius:50%}
       <span class="samplechip">Sample vault</span>
       <span id="conn"><span class="dot"></span> <span id="syncedAt">Not synced yet</span></span>
       <span id="links"></span><span class="grow"></span>
+      <button class="syncbtn densbtn" id="densBtn" title="Toggle details (v / ⌘.)"></button>
       <button class="conf" id="confBtn" hidden title="Conflicts to resolve"></button>
       <button class="pend" id="pendBtn" hidden title="Local changes waiting to be sent as proposals"></button>
       <button class="syncbtn" id="syncBtn" title="Sync now"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M20 12a8 8 0 0 1-14 5.3M4 12a8 8 0 0 1 14-5.3"/><path d="M18 3v4h-4M6 21v-4h4"/></svg><span>Sync</span> <kbd class="kbonly" id="syncKbd"></kbd></button>
@@ -297,9 +320,10 @@ html[data-family=orbital] .task .chk{border-radius:50%}
   <input id="qeIn" autocomplete="off" placeholder="e.g. Replace hallway filter tomorrow #home  ·  call Person B fri evening">
   <textarea id="qeNotes" placeholder="Notes (optional)"></textarea>
   <div class="chips" id="qeChips"></div>
-  <div class="foot"><span>Understands: today · tonight · tomorrow · fri · next mon · in 3 days · oct 14 · someday · soon · doing · due fri · #project</span><span class="grow"></span>
+  <div class="foot"><span>Understands: today · tonight · tomorrow · fri · next mon · in 3 days · oct 14 · someday · soon · doing · due fri · #project · @tag</span><span class="grow"></span>
     <button class="btn" id="qeCancel">Cancel</button><button class="btn pri" id="qeSave">Add <kbd class="kbonly">↵</kbd></button></div>
 </div></div>
+<div class="overlay" id="ovTag" hidden><div class="qe" role="dialog" aria-label="Tags" id="tagPick"></div></div>
 <div class="overlay" id="ovTri" hidden><div class="triage" role="dialog" aria-label="Doing review" id="tri"></div></div>
 <div class="overlay" id="ovPanel" hidden><div class="panel" role="dialog" id="panel"></div></div>
 <div class="toasts" id="toasts" aria-live="polite"></div>
@@ -472,7 +496,7 @@ const clone=o=>o==null?o:JSON.parse(JSON.stringify(o));
 const ymd=d=>{const x=new Date(d);return x.getFullYear()+'-'+String(x.getMonth()+1).padStart(2,'0')+'-'+String(x.getDate()).padStart(2,'0')};
 const addDays=(n,from=new Date())=>{const d=new Date(from);d.setHours(12,0,0,0);d.setDate(d.getDate()+n);return ymd(d)};
 const taskKey=t=>t.recordId+'#'+t.blockId;
-const hashOf=t=>{const s=JSON.stringify([t.title,t.notes,t.when,t.deadline,t.status,t.doing,t.headingId,t.checklist]);let h=0;for(let i=0;i<s.length;i++)h=(h*31+s.charCodeAt(i))|0;return 'h'+(h>>>0).toString(36)};
+const hashOf=t=>{const s=JSON.stringify([t.title,t.notes,t.when,t.deadline,t.status,t.doing,t.headingId,t.checklist,t.tags||[]]);let h=0;for(let i=0;i<s.length;i++)h=(h*31+s.charCodeAt(i))|0;return 'h'+(h>>>0).toString(36)};
 
 /* ---------- fictional sample vault ---------- */
 function buildSampleVault(){
@@ -533,20 +557,29 @@ function buildSampleVault(){
     T('rec-gd-fall','Pull spent tomato vines',{done:2}),
     T('rec-op-rhythm','Test smoke & CO detectors — Building B',{done:3,rhythm:R('rhy-smoke-monthly','monthly · 1st Sat')})
   ];
-  tasks.forEach(t=>t.contentHash=hashOf(t));
-  return {vault:{vaultId:V,name:'Sample vault'},stewardships:st,projects,tasks,proposals:[],receipts:[],pulls:0};
+  const TAGS=[
+    ['phone','phone','context','#2f6fd6'],['errand','errand','context','#8a5a2b'],['computer','computer','context','#5b4bb7'],['outside','outside','context','#3e7a3a'],['shop','shop','context','#a0522d'],
+    ['quick','quick','energy','#2e9d8f'],['deep','deep','energy','#4a3a8c'],['15m','15m','time','#7a8a2a'],['1h','1h','time','#9a6a14'],
+    ['waiting-on','waiting on','people','#c0702a'],['delegated','delegated','people','#8a6aa8'],['person-a','Person A','people','#b0476a'],
+    ['home','home','place','#6b2f1f'],['outpost','outpost','place','#4d2a17'],['high','high','priority','#c0392b'],['low','low','priority','#7d8790']];
+  const tags=TAGS.map(([id,name,group,color])=>({id,name,group,color,archived:false}));
+  const TT={'Drain and store hoses':['outside','home','15m'],'Clean gutters on the north side':['outside','1h'],'Order two soft-close slides':['computer','quick'],'Fix dripping kitchen faucet':['shop','high','outpost'],
+    'Confirm headcount with Person E':['phone','quick','outpost'],'Order propane refill':['phone','waiting-on'],'Book oil change':['phone','15m'],'Review launch checklist':['computer','deep','high'],
+    'Sample: ask Person B about the spare key':['phone','person-a'],'Count folding chairs':['outpost','delegated'],'Plant garlic in Bed 2':['outside','1h'],'Touch up hallway paint':['low','shop'],'Write sample release notes':['computer','deep'],'Deep clean bathroom':['outpost','1h'],'Renew registration (sample)':['errand','computer']};
+  tasks.forEach(t=>{t.tags=TT[t.title]||[];t.contentHash=hashOf(t)});
+  return {vault:{vaultId:V,name:'Sample vault'},tags,stewardships:st,projects,tasks,proposals:[],receipts:[],pulls:0};
 }
 
 /* =================================================================== */
 class SampleProvider{
-  constructor(){this.kind='sample';this.key='stewardos-'+APP_TAG+'-sample-engine-v1';this.offline=false;
+  constructor(){this.kind='sample';this.key='stewardos-'+APP_TAG+'-sample-engine-v2';this.offline=false;
     try{this.v=JSON.parse(localStorage.getItem(this.key)||'null')}catch(e){this.v=null}
     if(!this.v||!this.v.tasks){this.v=buildSampleVault();this._save()}}
   _save(){try{localStorage.setItem(this.key,JSON.stringify(this.v))}catch(e){}}
   async _lag(ms=550){await new Promise(r=>setTimeout(r,ms)); if(this.offline)throw new ProviderError('offline',"Can't reach the Engine (simulated offline).")}
   /* ---- INTEGRATION POINT: load-data ---- */
   async getStatus(){return {state:this.offline?'offline':'ok',source:'sample',vaultId:this.v.vault.vaultId,vaultName:this.v.vault.name,protocol:1,planner:'1.5.0-identity.1 (assumed; sample)'}}
-  async load(){await this._lag(120);const v=this.v;return clone({vault:v.vault,stewardships:v.stewardships,projects:v.projects,tasks:v.tasks,serverTime:isoNow()})}
+  async load(){await this._lag(120);const v=this.v;return clone({vault:v.vault,tags:v.tags||[],stewardships:v.stewardships,projects:v.projects,tasks:v.tasks,serverTime:isoNow()})}
   /* ---- INTEGRATION POINT: propose ----
      Accepts queued proposals. The real Engine would route each through Intake,
      confirm, return a receipt, and the client reads back. Here the simulated
@@ -564,7 +597,7 @@ class SampleProvider{
         if(p.op==='rhythm.complete'){t.status='done';t.completedAt=p.at;t.doing=false} // Engine logs the occurrence; it (not the app) decides the next one
         t.contentHash=hashOf(t);
       } else {
-        const t={...p.patch,recordId:p.target.recordId,blockId:'^t'+Math.random().toString(36).slice(2,7),vaultId:v.vault.vaultId,status:'open',completedAt:null,rhythm:null,checklist:p.patch.checklist||[],createdAt:p.at};
+        const t={tags:[],...p.patch,recordId:p.target.recordId,blockId:'^t'+Math.random().toString(36).slice(2,7),vaultId:v.vault.vaultId,status:'open',completedAt:null,rhythm:null,checklist:p.patch.checklist||[],createdAt:p.at};
         t.contentHash=hashOf(t); v.tasks.push(t); receipts.push({proposalId:p.id,status:'accepted',op:p.op,target:{recordId:t.recordId,blockId:t.blockId},tempKey:p.tempKey,receiptId:'rcpt-'+Math.random().toString(36).slice(2,8)});continue;
       }
       receipts.push({proposalId:p.id,status:'accepted',op:p.op,target:p.target,receiptId:'rcpt-'+Math.random().toString(36).slice(2,8)});
@@ -578,6 +611,8 @@ class SampleProvider{
     if(v.pulls===1){const t={recordId:'rec-op-rhythm',blockId:'^r-sump-'+ymd(Date.now()),vaultId:v.vault.vaultId,title:'Test sump pump float',notes:'Pushed by the Engine from a rhythm rule.',when:'today',deadline:null,headingId:null,doing:false,status:'open',completedAt:null,rhythm:{ruleId:'rhy-sump-monthly',label:'monthly · 2nd Fri',source:'StewardOS rhythm'},checklist:[],createdAt:isoNow()};t.contentHash=hashOf(t);v.tasks.push(t)}
     this._save(); return this.load();
   }
+  /* ---- INTEGRATION POINT: tags ---- */
+  async saveTagRegistry(tags){this.v.tags=clone(tags);this._save();return {ok:true}}
   async reset(){localStorage.removeItem(this.key)}
 }
 
@@ -590,6 +625,8 @@ class LiveProvider{
   /* ---- INTEGRATION POINT: load-data ---- */
   getStatus(){return this._req('GET','/tasks/status')}            // -> {state, vaultId, protocol, planner}
   load(){return this._req('GET','/tasks/snapshot')}               // -> {vault, stewardships, projects(task_collection records w/ current path), tasks}
+  /* ---- INTEGRATION POINT: tags ---- tag registry (names/colors/archived) is presentation config, e.g. a Vault preferences record; renames never touch task identity */
+  saveTagRegistry(tags){return this._req('PUT','/tasks/tag-registry',{tags})}
   /* ---- INTEGRATION POINT: identity ---- re-resolve recordId -> current path before acting; 404/duplicate must stop */
   resolve(recordId){return this._req('GET','/records/'+encodeURIComponent(recordId)+'/resolve')}
   /* ---- INTEGRATION POINT: propose ---- each item goes to Intake as a proposal; Engine confirms, writes, returns receipts; client reads back */
@@ -632,7 +669,8 @@ function parseEntry(raw,ctx){
   let m=s.match(/\s#([\w-]+(?: [\w-]+)?)/);
   if(m){const q=m[1].toLowerCase();const pj=S.projects.filter(p=>!p.system).find(p=>p.title.toLowerCase().includes(q))||S.projects.filter(p=>!p.system).find(p=>p.title.toLowerCase().includes(q.split(' ')[0]));
     if(pj){out.recordId=pj.recordId;const used=pj.title.toLowerCase().includes(q)?m[0]:' #'+m[1].split(' ')[0];cut(s.indexOf(used),used.length)}}
-  // due <date>
+  // @tag (tags). '#' stays = project. Unknown @words become new tags on save.
+  out.tags=[];s=s.replace(/\s@([\w-]+)/g,(m0,w)=>{const q=w.toLowerCase();const t=S.tags.find(x=>!x.archived&&(x.id===q||slug(x.name)===q));out.tags.push(t?t.id:'new:'+q);return ' '});
   m=s.match(/\s(due|by|deadline) /i);
   if(m){const r=parseDateAt(s.slice(m.index+m[0].length));if(r){out.deadline=r.date;cut(m.index,m[0].length+r.len)}}
   const kw=[[/\s(tonight|this evening|evening)\b/i,'evening'],[/\ssomeday\b/i,'someday'],[/\ssoon\b/i,'soon'],[/\sanytime\b/i,'anytime']];
@@ -647,16 +685,24 @@ function parseEntry(raw,ctx){
   if(out.when)out.chips.push(['when',whenLabel(out.when)]);
   if(out.deadline)out.chips.push(['dl','Due '+fmtShort(out.deadline)]);
   if(out.doing)out.chips.push(['doing','Doing']);
+  for(const id of out.tags)out.chips.push(['tag:'+id,'@'+(id.startsWith('new:')?id.slice(4)+' (new)':tagName(id))]);
   return out;
 }
+const slug=s=>String(s).toLowerCase().trim().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'');
+const tagOf=id=>S.tags.find(t=>t.id===id);
+const tagName=id=>{const t=tagOf(id);return t?t.name:id};
+/** Ensure a tag exists in the registry (presentation config, not Vault data). Returns its id. */
+function ensureTag(name){const id=slug(name);if(!id)return null;if(!tagOf(id)){S.tags.push({id,name,group:'custom',color:'#7d6a52',archived:false});saveTags()}return id}
+function saveTags(){persist();provider&&provider.saveTagRegistry&&provider.saveTagRegistry(S.tags).catch(()=>{})}
 const whenLabel=w=>w==='today'?'★ Today':w==='evening'?'☾ This Evening':w==='someday'?'Someday':w==='soon'?'Soon':w==='anytime'?'Anytime':isDate(w)?fmtDay(w):'—';
 
 /* ===================== TASK STORE (local cache + proposal queue) ===================== */
-const LS='stewardos-'+APP_TAG+'-proto-v1';
+const LS='stewardos-'+APP_TAG+'-proto-v2';
 const S={vault:null,stewardships:[],projects:[],tasks:[],queue:[],issues:[],lastSynced:null,syncing:false,
+  tags:[],tagFilter:{ids:[],mode:'or'},density:{},
   settings:{theme:'brass',autoSync:false,inAppRepeats:false},view:'today',sel:null,open:null,justDone:new Set()};
 let provider=null;
-function persist(){try{localStorage.setItem(LS,JSON.stringify({vault:S.vault,stewardships:S.stewardships,projects:S.projects,tasks:S.tasks,queue:S.queue,issues:S.issues,confirmed:S.confirmed||{},lastSynced:S.lastSynced,settings:S.settings,view:S.view}))}catch(e){}}
+function persist(){try{localStorage.setItem(LS,JSON.stringify({tags:S.tags,tagFilter:S.tagFilter,density:S.density,vault:S.vault,stewardships:S.stewardships,projects:S.projects,tasks:S.tasks,queue:S.queue,issues:S.issues,confirmed:S.confirmed||{},lastSynced:S.lastSynced,settings:S.settings,view:S.view}))}catch(e){}}
 function restore(){try{const o=JSON.parse(localStorage.getItem(LS)||'null');if(o){Object.assign(S,o);S.settings=Object.assign({theme:'brass',autoSync:false,inAppRepeats:false},o.settings);return true}}catch(e){}return false}
 const byKey=k=>S.tasks.find(t=>taskKey(t)===k);
 const projOf=t=>S.projects.find(p=>p.recordId===t.recordId);
@@ -671,7 +717,7 @@ function propose(op,t,patch={}){
   if(op==='task.create'){const tmp='^tmp-'+Math.random().toString(36).slice(2,7);
     const nt={...patch,recordId:patch.recordId,blockId:tmp,vaultId:S.vault.vaultId,status:'open',completedAt:null,rhythm:null,checklist:[],createdAt:at,_temp:true};
     S.tasks.push(nt);
-    S.queue.push({id:'prop-'+Math.random().toString(36).slice(2,9),op,target:{vaultId:S.vault.vaultId,recordId:patch.recordId,blockId:null},tempKey:taskKey(nt),patch:{title:nt.title,notes:nt.notes||'',when:nt.when,deadline:nt.deadline||null,doing:!!nt.doing,headingId:nt.headingId||null},at,source:'quick-entry'});
+    S.queue.push({id:'prop-'+Math.random().toString(36).slice(2,9),op,target:{vaultId:S.vault.vaultId,recordId:patch.recordId,blockId:null},tempKey:taskKey(nt),patch:{tags:nt.tags||[],title:nt.title,notes:nt.notes||'',when:nt.when,deadline:nt.deadline||null,doing:!!nt.doing,headingId:nt.headingId||null},at,source:'quick-entry'});
     persist();return nt}
   // edits to a not-yet-created task just fold into its create proposal
   const create=S.queue.find(p=>p.op==='task.create'&&p.tempKey===key);
@@ -705,6 +751,7 @@ async function sync({silent}={}){
     const done=new Set(receipts.map(r=>r.proposalId)); S.queue=S.queue.filter(p=>!done.has(p.id));
     // Rhythm occurrences have ONE authority (the Engine). Dedupe pushed items by identity so a re-push never doubles up.
     const uniq=new Map();for(const t of snap.tasks){const k=taskKey(t);if(uniq.has(k))console.warn('duplicate identity dropped',k);else uniq.set(k,t)}
+    if(snap.tags)S.tags=snap.tags;
     Object.assign(S,{vault:snap.vault,stewardships:snap.stewardships,projects:snap.projects,tasks:[...uniq.values()]});
     // confirmed state: show a receipt mark on rows the Engine accepted this sync
     S.confirmed={};for(const r of receipts)if(r.status==='accepted'&&r.target)S.confirmed[r.target.recordId+'#'+r.target.blockId]=r.receiptId;
@@ -747,6 +794,7 @@ const ICON={
   rhythm:I('<path d="M3 12h4l2-5 4 10 2-5h6"/>'),
   flag:I('<path d="M6 21V4M6 4h11l-2 4 2 4H6"/>'),
   more:I('<circle cx="5" cy="12" r="1.3"/><circle cx="12" cy="12" r="1.3"/><circle cx="19" cy="12" r="1.3"/>'),
+  tag:I('<path d="M3 12V4h8l9 9-8 8z"/><circle cx="7.5" cy="8.5" r="1.3"/>'),
   sync:I('<path d="M20 12a8 8 0 0 1-14 5.3M4 12a8 8 0 0 1 14-5.3"/><path d="M18 3v4h-4M6 21v-4h4"/>')
 };
 const VIEWS=[['inbox','Inbox'],['today','Today'],['upcoming','Upcoming'],['anytime','Anytime'],['someday','Someday'],['logbook','Logbook'],['doing','Doing'],['projects','Projects']];
@@ -777,6 +825,7 @@ function tasksFor(view){
     case 'anytime':return all.filter(t=>!inInbox(t)&&['anytime','soon','today','evening'].includes(t.when));
     case 'someday':return all.filter(t=>t.when==='someday');
     case 'doing':return all.filter(t=>t.doing);
+    case 'tags':{const f=S.tagFilter;if(!f.ids.length)return [];const has=(t,id)=>id==='sys:rhythm'?!!t.rhythm:(t.tags||[]).includes(id);return all.filter(t=>f.mode==='and'?f.ids.every(id=>has(t,id)):f.ids.some(id=>has(t,id)))}
     case 'logbook':return S.tasks.filter(t=>t.status==='done').sort((a,b)=>String(b.completedAt).localeCompare(String(a.completedAt)));
   }
   if(view.startsWith('pj:'))return S.tasks.filter(t=>t.recordId===view.slice(3));
@@ -784,14 +833,18 @@ function tasksFor(view){
 }
 const counts=v=>tasksFor(v).filter(t=>t.status==='open').length;
 
+/* ===================== DENSITY (per view) ===================== */
+const densKey=v=>v.startsWith('pj:')?'project':v.startsWith('st:')?'stewardship':v;
+const density=()=>S.density[densKey(S.view)]||'comfortable';
+function toggleDensity(){$('#side').classList.remove('open');const k=densKey(S.view);S.density[k]=density()==='compact'?'comfortable':'compact';persist();render();toast('Details: '+S.density[k]+' (this view)')}
 /* ===================== RENDER ===================== */
 let ORDER=[];
-function render(){renderNav();renderTop();renderSheet();renderTabs()}
+function render(){renderNav();renderTop();renderSheet();renderTabs();const c=density()==='compact';$('#sheet').classList.toggle('compact',c);$('#densBtn').innerHTML=(c?'☰ Compact':'≣ Comfortable')+' <kbd class="kbonly">v</kbd>';$('#densSide').textContent=c?'☰':'≣';$('#densSide').title='Details: '+(c?'compact':'comfortable')+' (tap to switch)'}
 function renderNav(){
   const c=v=>{const n=counts(v);return n?`<span class="ct${v==='today'&&tasksFor('today').some(t=>t.deadline&&t.deadline<=T0())?' hot':''}">${n}</span>`:''};
   const btn=(v,label,icon,cls='')=>`<button data-view="${v}" class="${cls}" ${S.view===v?'aria-current="page"':''}><span class="ic">${icon}</span>${esc(label)}${c(v)}</button>`;
   let h=btn('inbox','Inbox',ICON.inbox)+'<div style="height:8px"></div>'+btn('today','Today',ICON.today)+btn('upcoming','Upcoming',ICON.upcoming)+btn('anytime','Anytime',ICON.anytime)+btn('someday','Someday',ICON.someday)+btn('logbook','Logbook',ICON.logbook);
-  h+='<div style="height:8px"></div>'+btn('doing','Doing',ICON.doing)+btn('projects','Projects',ICON.projects);
+  h+='<div style="height:8px"></div>'+btn('doing','Doing',ICON.doing)+btn('projects','Projects',ICON.projects)+btn('tags','Tags',ICON.tag);
   h+='<div class="grp">Stewardships</div>';
   for(const s of S.stewardships){h+=btn('st:'+s.id,s.name,ICON.stew,'st');
     for(const p of S.projects.filter(p=>p.stewardshipId===s.id)){const all=S.tasks.filter(t=>t.recordId===p.recordId),d=all.filter(t=>t.status==='done').length;
@@ -815,19 +868,23 @@ function row(t,{hideProject,hideWhen}={}){
   if(t.deadline)tags.push(`<span class="tag dl">${ICON.flag}Due ${esc(fmtShort(t.deadline))}</span>`);
   if(t.rhythm)tags.push(`<span class="tag rhythm" title="Pushed by the Engine from rule ${esc(t.rhythm.ruleId)}">${ICON.rhythm}from StewardOS rhythm · ${esc(t.rhythm.label)}</span>`);
   if(t.checklist&&t.checklist.length)tags.push(`<span class="tag">${t.checklist.filter(c=>c.done).length}/${t.checklist.length}</span>`);
-  if(t.notes)tags.push('<span class="tag" title="Has notes">≡</span>');
+  const ut=(t.tags||[]).map(tagOf).filter(x=>x&&!x.archived);
+  for(const g of ut)tags.push(`<span class="tag ut" style="--tc:${esc(g.color)}" data-tagchip="${esc(g.id)}">${esc(g.name)}</span>`);
   const conf=conflictKeys().has(k);if(conf)tags.push('<span class="tag conflict" title="Resolve in Sync & settings">conflicted</span>');
   else if(!pend&&S.confirmed&&S.confirmed[k])tags.push(`<span class="tag confirmed" title="Receipt ${esc(S.confirmed[k])}">✓ confirmed</span>`);
   if(pend)tags.push(`<span class="tag pending" title="Queued as a proposal; sent on next sync">${t._temp?'new · ':''}pending</span>`);
   const proj=!hideProject&&p&&!p.system?`<span>${esc(st?st.name+' › ':'')}${esc(p.title)}</span>`:'';
   const cls=['task',t.status==='done'?'done':'',pend&&t.status==='done'?'pendingDone':'',S.sel===k?'sel':''].join(' ');
   let det='';
+  const compact=density()==='compact';
+  const mini=compact?`<span class="mini">${t.doing&&S.view!=='doing'?`<span title="Doing">${ICON.doing}</span>`:''}${t.rhythm?`<span title="StewardOS rhythm" style="color:var(--rhythm)">${ICON.rhythm}</span>`:''}${t.deadline?`<span title="Due ${esc(t.deadline)}" style="color:var(--deadline)">${ICON.flag}</span>`:''}${ut.length?`<span title="${esc(ut.map(g=>g.name).join(', '))}">${ut.slice(0,3).map(g=>`<i class="md" style="background:${esc(g.color)}"></i>`).join('')}${ut.length}</span>`:''}${pend?'<span title="pending" style="color:var(--attention)">•</span>':''}${conf?'<span title="conflicted" style="color:var(--alert)">!</span>':''}</span>`:'';
   if(S.open===k){
     det=`<div class="detail">${t.notes?`<div class="notes">${esc(t.notes)}</div>`:''}
       ${t.checklist.length?`<ul class="checklist">${t.checklist.map((c,i)=>`<li class="${c.done?'d':''}"><i data-cl="${i}" role="checkbox" aria-checked="${c.done}" tabindex="0"></i>${esc(c.text)}</li>`).join('')}</ul><div class="idline">Checklist items are anonymous (no ids) and stay a checklist.</div>`:''}
+      <div class="meta" style="margin-top:6px">Tags: ${ut.map(g=>`<span class="tag ut" style="--tc:${esc(g.color)}">${esc(g.name)}</span>`).join('')||'<span>none</span>'}${t.rhythm?'<span class="tag rhythm">rhythm (system, read-only)</span>':''}<button class="btn" data-tagedit>Edit tags <kbd class="kbonly">g</kbd></button></div>
       <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:8px">${[['today','★ Today','t'],['evening','☾ Evening','e'],['tomorrow','Tomorrow','m'],['soon','Soon','s'],['someday','Someday','o']].map(([w,l,kk])=>`<button class="btn" data-set="${w}">${l} <kbd class="kbonly">${kk}</kbd></button>`).join('')}<button class="btn" data-doing>${t.doing?'Leave Doing':'Start Doing'} <kbd class="kbonly">d</kbd></button></div>
       <div class="idline">recordId <b>${esc(t.recordId)}</b> · blockId <b>${esc(t.blockId)}</b>${t._temp?' (temporary — Engine assigns on accept)':''} · hash ${esc(t.contentHash||'—')}</div></div>`}
-  return `<li class="${cls}" data-key="${esc(k)}"><button class="chk" aria-label="${t.status==='done'?'Mark open':'Complete'}: ${esc(t.title)}"></button><div class="body"><span class="ttl">${esc(t.title)}</span>${tags.length||proj?`<div class="meta">${proj}${tags.join('')}</div>`:''}${det}</div></li>`;
+  return `<li class="${cls}" data-key="${esc(k)}"><button class="chk" aria-label="${t.status==='done'?'Mark open':'Complete'}: ${esc(t.title)}"></button><div class="body"><span class="ttl">${esc(t.title)}${mini}</span>${!compact&&(tags.length||proj)?`<div class="meta">${proj}${tags.join('')}</div>`:''}${!compact&&t.notes&&S.open!==k?`<div class="snip">${esc(t.notes.split('\n')[0])}</div>`:''}${det}</div></li>`;
 }
 const ul=(list,o)=>list.length?`<ul class="tasks">${list.map(t=>{ORDER.push(taskKey(t));return row(t,o)}).join('')}</ul>`:'';
 const emptyMsg=(b,s)=>`<div class="empty"><b>${b}</b>${s}</div>`;
@@ -848,6 +905,16 @@ function renderSheet(){
     L=[...days].map(([d,ts])=>`<h2 class="sec">${esc(fmtDay(d))}</h2>`+ul(ts)).join('')||emptyMsg('Nothing logged yet','')}
   else if(v==='doing'){const l=tasksFor(v);H=header('Doing',ICON.doing,'',`<button class="btn pri" data-triage ${l.length?'':'disabled'}>Review Doing <kbd class="kbonly">${MOD}E</kbd></button>`);
     L=(l.length?`<div class="idline" style="margin:4px 0 8px">Doing is a status (work in motion); the schedule is separate. Review sets each item’s schedule (Today, Tomorrow, Soon, Upcoming, Someday) with one key and keeps it Doing unless you press L.</div>`:'')+(ul(l)||emptyMsg('Nothing in motion','Press d on any to-do to start Doing it.'))}
+  else if(v==='tags'){const f=S.tagFilter,l=tasksFor(v);H=header('Tags',ICON.tag,'',`<button class="btn" data-tagmode>Match: ${f.mode==='and'?'ALL (AND)':'ANY (OR)'}</button>${f.ids.length?'<button class="btn" data-tagclear>Clear</button>':''}`);
+    const chip=(id,name,color)=>`<button class="tag ut" style="--tc:${esc(color)}" data-tagf="${esc(id)}" aria-pressed="${f.ids.includes(id)}">${esc(name)}</button>`;
+    const groups=[...new Set(S.tags.filter(t=>!t.archived).map(t=>t.group))];
+    L=`<div class="idline" style="margin-top:2px">Filter by one or more tags. Tags are presentation metadata on a task (never identity). Quick entry: <b>@tag</b> (<b>#</b> is project).</div>`+
+      groups.map(g=>`<div class="tfilter"><span class="idline" style="width:70px;margin:0">${esc(g)}</span>${S.tags.filter(t=>!t.archived&&t.group===g).map(t=>chip(t.id,t.name,t.color)).join('')}</div>`).join('')+
+      `<div class="tfilter"><span class="idline" style="width:70px;margin:0">system</span>${chip('sys:rhythm','rhythm 🔒','#8a7a5a')}</div>`+
+      (f.ids.length?`<h2 class="sec">${l.length} match${l.length===1?'':'es'}<small>${f.mode==='and'?'all of':'any of'} ${esc(f.ids.map(id=>id==='sys:rhythm'?'rhythm':tagName(id)).join(', '))}</small></h2>`+(ul(l)||emptyMsg('No open to-dos match','')):'')+
+      `<details style="margin-top:22px" ${S.tagManageOpen?'open':''} id="tagManage"><summary class="sec" style="cursor:pointer;font:600 15px var(--h-font)">Manage tags</summary><div class="idline">Rename and recolor change display only (tag ids stay stable). Archive hides a tag from pickers; tasks keep it. Nothing in the Vault is deleted.</div>`+
+      S.tags.map(t=>{const n=S.tasks.filter(x=>(x.tags||[]).includes(t.id)).length;return `<div class="tagrow ${t.archived?'arch':''}" data-tagid="${esc(t.id)}"><input type="color" value="${esc(t.color)}" data-tagcolor aria-label="Color for ${esc(t.name)}"><input type="text" value="${esc(t.name)}" data-tagname aria-label="Name"><span class="idline" style="margin:0">${esc(t.group)} · @${esc(t.id)}</span><span class="idline" style="margin:0">${n} task${n===1?'':'s'}</span><button class="btn" data-tagarch>${t.archived?'Unarchive':'Archive'}</button></div>`}).join('')+
+      `<div class="tagrow"><span>🔒</span><span>rhythm</span><span class="idline" style="margin:0">system · read-only</span><span class="idline" style="margin:0">${S.tasks.filter(x=>x.rhythm).length} tasks</span><span></span></div></details>`}
   else if(v==='projects'){H=header('Projects',ICON.projects,'All projects across Stewardships');
     L=S.stewardships.map(s=>{const ps=S.projects.filter(p=>p.stewardshipId===s.id);return ps.length?`<h2 class="sec" data-goto="st:${s.id}" style="cursor:pointer">${esc(s.name)}<small>${ps.length} project${ps.length===1?'':'s'}</small></h2><div class="pgrid">${ps.map(pcard).join('')}</div>`:''}).join('')}
   else if(v.startsWith('st:')){const s=stOf(v.slice(3));const ps=S.projects.filter(p=>p.stewardshipId===s.id);H=header(s.name,ICON.stew,'Stewardship');
@@ -887,12 +954,33 @@ function openQE(ctxOverride){
   const p=S.projects.find(x=>x.recordId===qeCtx.recordId);
   $('#qeTitle').textContent='New to-do → '+(p?p.title:'Inbox')+(qeCtx.when?' · '+whenLabel(qeCtx.when):'');
   $('#qeIn').value='';$('#qeNotes').value='';$('#qeChips').innerHTML='';$('#ovQE').hidden=false;setTimeout(()=>$('#qeIn').focus(),10)}
-function qeChips(){const r=parseEntry($('#qeIn').value,qeCtx);if(qeCtx.doing)r.doing=true;$('#qeChips').innerHTML=r.chips.map(([c,l])=>`<span class="tag ${c==='dl'?'dl':c==='doing'?'doing':c==='when'?'today':''}">${esc(l)}</span>`).join('');return r}
+function qeChips(){const r=parseEntry($('#qeIn').value,qeCtx);if(qeCtx.doing)r.doing=true;$('#qeChips').innerHTML=r.chips.map(([c,l])=>{if(c.startsWith('tag:')){const g=tagOf(c.slice(4));return `<span class="tag ut" style="--tc:${esc(g?g.color:'#7d6a52')}">${esc(l)}</span>`}return `<span class="tag ${c==='dl'?'dl':c==='doing'?'doing':c==='when'?'today':''}">${esc(l)}</span>`}).join('');return r}
 function saveQE(){const r=qeChips();if(!r.title){$('#qeIn').focus();return}
   const inbox=S.projects.find(p=>p.system==='inbox');
-  const t=propose('task.create',{},{recordId:r.recordId||inbox.recordId,title:r.title,notes:$('#qeNotes').value.trim(),when:r.when,deadline:r.deadline,doing:r.doing||!!qeCtx.doing,headingId:null});
+  const tagIds=(r.tags||[]).map(id=>id.startsWith('new:')?ensureTag(id.slice(4)):id).filter(Boolean);
+  const t=propose('task.create',{},{tags:[...new Set(tagIds)],recordId:r.recordId||inbox.recordId,title:r.title,notes:$('#qeNotes').value.trim(),when:r.when,deadline:r.deadline,doing:r.doing||!!qeCtx.doing,headingId:null});
   $('#ovQE').hidden=true;S.sel=taskKey(t);render();toast('Added · queued as a create proposal');
   if(S.settings.autoSync)sync({silent:true})}
+
+/* ---- tag picker (task or quick entry) ---- */
+let TP=null;
+function openTagPicker(key){const t=byKey(key);if(!t)return;TP={key,q:'',hi:0};$('#ovTag').hidden=false;renderTP();setTimeout(()=>$('#tpIn').focus(),10)}
+function tpList(){const q=TP.q.toLowerCase();return S.tags.filter(g=>!g.archived&&(!q||g.name.toLowerCase().includes(q)||g.id.includes(q)))}
+function renderTP(){const t=byKey(TP.key);if(!t){closeTP();return}const l=tpList(),cur=new Set(t.tags||[]);TP.hi=Math.min(TP.hi,Math.max(0,l.length-1));
+  const canNew=TP.q.trim()&&!S.tags.some(g=>g.id===slug(TP.q));
+  $('#tagPick').innerHTML=`<h4>Tags · ${esc(t.title)}</h4><input id="tpIn" autocomplete="off" placeholder="Type to filter or create…" value="${esc(TP.q)}">
+   <div class="pick">${l.map((g,i)=>`<button role="checkbox" aria-checked="${cur.has(g.id)}" data-tp="${esc(g.id)}" class="${i===TP.hi?'hi':''}" style="--tc:${esc(g.color)}"><span class="box">${cur.has(g.id)?'✓':''}</span>${esc(g.name)}<small>${esc(g.group)}</small></button>`).join('')}
+   ${canNew?`<button data-tpnew><span class="box" style="--tc:#7d6a52">+</span>Create “${esc(TP.q.trim())}”<small>custom</small></button>`:''}</div>
+   <div class="foot"><span>↑↓ move · ↵ toggle · changes queue as one task.update proposal</span><span class="grow"></span><button class="btn pri" data-tpdone>Done <kbd class="kbonly">Esc</kbd></button></div>`;
+  const inp=$('#tpIn');inp.setSelectionRange(inp.value.length,inp.value.length)}
+function tpToggle(id){const t=byKey(TP.key);const s=new Set(t.tags||[]);s.has(id)?s.delete(id):s.add(id);propose('task.update',t,{tags:[...s]});renderTP();render()}
+function closeTP(){$('#ovTag').hidden=true;TP=null;render()}
+$('#ovTag').addEventListener('input',e=>{if(e.target.id==='tpIn'){TP.q=e.target.value;TP.hi=0;renderTP();$('#tpIn').focus()}});
+$('#ovTag').addEventListener('keydown',e=>{if(!TP)return;const l=tpList();
+  if(e.key==='ArrowDown'){TP.hi=Math.min(l.length-1,TP.hi+1);renderTP();$('#tpIn').focus();e.preventDefault()}
+  else if(e.key==='ArrowUp'){TP.hi=Math.max(0,TP.hi-1);renderTP();$('#tpIn').focus();e.preventDefault()}
+  else if(e.key==='Enter'){e.preventDefault();if(l[TP.hi]&&(!TP.q||l.length))tpToggle(l[TP.hi].id);else if(TP.q.trim()){const id=ensureTag(TP.q.trim());TP.q='';tpToggle(id)}$('#tpIn').focus()}
+  else if(e.key==='Escape'){e.preventDefault();e.stopPropagation();closeTP()}});
 
 /* ---- Doing triage ---- */
 let TRI=null;
@@ -930,7 +1018,11 @@ function help(){const K=MOD;openPanel(`<h3>Keyboard</h3><table>
  <tr><td><kbd>↑</kbd><kbd>↓</kbd> or <kbd>j</kbd><kbd>k</kbd></td><td>Move selection</td></tr>
  <tr><td><kbd>↵</kbd></td><td>Open / close details</td></tr>
  <tr><td><kbd>t</kbd> <kbd>e</kbd> <kbd>m</kbd> <kbd>s</kbd> <kbd>o</kbd> on a selected row</td><td>Today · Evening · Tomorrow (<kbd>m</kbd>) · Someday (<kbd>o</kbd>) · Soon (<kbd>s</kbd>)</td></tr>
- <tr><td><kbd>d</kbd></td><td>Start / leave Doing</td></tr>
+ <tr><td><kbd>d</kbd></td><td>Start / leave Doing (status only)</td></tr>
+ <tr><td><kbd>g</kbd> · <kbd>${K}G</kbd></td><td>Tag the selected to-do</td></tr>
+ <tr><td><kbd>f</kbd> · <kbd>${K}J</kbd></td><td>Filter by tag (Tags view)</td></tr>
+ <tr><td><kbd>v</kbd> · <kbd>${K}.</kbd></td><td>Details: Comfortable ↔ Compact (remembered per view)</td></tr>
+ <tr><td>Quick entry</td><td><b>@tag</b> adds a tag (new names are created) · <b>#project</b> files to a project</td></tr>
  <tr><td><kbd>1</kbd>–<kbd>8</kbd> (or <kbd>${K}1</kbd>–<kbd>${K}8</kbd> in the app wrapper)</td><td>Inbox · Today · Upcoming · Anytime · Someday · Logbook · Doing · Projects</td></tr>
  <tr><td><kbd>${K}B</kbd></td><td>Show / hide sidebar</td></tr>
  <tr><td><kbd>\`</kbd></td><td>Next theme</td></tr>
@@ -957,6 +1049,15 @@ document.addEventListener('click',e=>{
   const g=e.target.closest('[data-goto]');if(g){go(g.dataset.goto);return}
   const lk=e.target.closest('[data-link]');if(lk){const l=DISPLAY.links.find(x=>x.id===lk.dataset.link);if(l.href)location.href=l.href;else toast(l.name+' link (stub, sample build)');return}
   if(e.target.closest('[data-resolve]')){const [i,how]=e.target.closest('[data-resolve]').dataset.resolve.split(':');resolveConflict(+i,how);settings();return}
+  const tf=e.target.closest('[data-tagf]');if(tf){const id=tf.dataset.tagf,f=S.tagFilter;f.ids=f.ids.includes(id)?f.ids.filter(x=>x!==id):[...f.ids,id];persist();render();return}
+  if(e.target.closest('[data-tagmode]')){S.tagFilter.mode=S.tagFilter.mode==='and'?'or':'and';persist();render();return}
+  if(e.target.closest('[data-tagclear]')){S.tagFilter.ids=[];persist();render();return}
+  const ta=e.target.closest('[data-tagarch]');if(ta){const g=tagOf(ta.closest('[data-tagid]').dataset.tagid);g.archived=!g.archived;S.tagFilter.ids=S.tagFilter.ids.filter(x=>x!==g.id||!g.archived);S.tagManageOpen=true;saveTags();render();toast((g.archived?'Archived ':'Restored ')+g.name+' (tasks keep the tag)');return}
+  const tp=e.target.closest('[data-tp]');if(tp){tpToggle(tp.dataset.tp);return}
+  if(e.target.closest('[data-tpnew]')){const id=ensureTag(TP.q.trim());TP.q='';tpToggle(id);return}
+  if(e.target.closest('[data-tpdone]')){closeTP();return}
+  const chip=e.target.closest('[data-tagchip]');if(chip&&!e.target.closest('.detail')){S.tagFilter={ids:[chip.dataset.tagchip],mode:S.tagFilter.mode};go('tags');return}
+  if(e.target.closest('#densBtn')||e.target.closest('#densSide')){toggleDensity();return}
   if(e.target.closest('[data-more]')){$('#side').classList.toggle('open');return}
   if(e.target.closest('[data-qe]')||e.target.closest('#fab')){openQE();return}
   if(e.target.closest('[data-triage]')){openTriage();return}
@@ -971,15 +1072,20 @@ document.addEventListener('click',e=>{
     const cl=e.target.closest('[data-cl]');if(cl){const t=byKey(k),i=+cl.dataset.cl,list=clone(t.checklist);list[i].done=!list[i].done;propose('task.update',t,{checklist:list});render();return}
     const st=e.target.closest('[data-set]');if(st){setWhen(k,st.dataset.set);return}
     if(e.target.closest('[data-doing]')){toggleDoing(k);return}
+    if(e.target.closest('[data-tagedit]')){openTagPicker(k);return}
     if(e.target.closest('.detail'))return;
     if(S.sel===k&&e.detail>=2||isPhone())S.open=S.open===k?null:k;S.sel=k;render();return}
-  if(e.target.classList.contains('overlay')){if(e.target.id==='ovTri')closeTri();else e.target.hidden=true}
+  if(e.target.classList.contains('overlay')){if(e.target.id==='ovTri')closeTri();else if(e.target.id==='ovTag')closeTP();else e.target.hidden=true}
 });
 $('#syncBtn').onclick=()=>sync();
 $('#pendBtn').onclick=()=>settings();$('#confBtn').onclick=()=>settings();
 $('#setBtn').onclick=()=>settings();
 $('#keysBtn').onclick=()=>help();
 $('#qeIn').addEventListener('input',qeChips);
+document.addEventListener('change',e=>{const r=e.target.closest('[data-tagid]');if(!r)return;const g=tagOf(r.dataset.tagid);
+  if(e.target.matches('[data-tagname]')){const n=e.target.value.trim();if(n){g.name=n;toast('Renamed (display only; id @'+g.id+' unchanged)')}}
+  if(e.target.matches('[data-tagcolor]'))g.color=e.target.value;
+  S.tagManageOpen=true;saveTags();render()});
 $('#qeSave').onclick=saveQE;$('#qeCancel').onclick=()=>{$('#ovQE').hidden=true};
 
 const typing=e=>/INPUT|TEXTAREA|SELECT/.test(e.target.tagName);
@@ -993,10 +1099,11 @@ document.addEventListener('keydown',e=>{
     if(e.target.id==='triDateIn'){if(e.key==='Enter'){triDo('upcoming',e.target.value);e.preventDefault()}return}
     const o=TRI_OPTS.find(x=>x[0]===k);if(o&&!mod&&TRI&&byKey(TRI.keys[TRI.i])){triDo(o[1]);e.preventDefault();return}
     const n=+e.key;if(n>=1&&n<=7&&TRI&&byKey(TRI.keys[TRI.i])){triDo(TRI_OPTS[n-1][1]);e.preventDefault()}return}
+  if(!$('#ovTag').hidden)return;
   if(!$('#ovPanel').hidden){if(e.key==='Escape'){$('#ovPanel').hidden=true;document.activeElement&&document.activeElement.blur();e.preventDefault()}return}
   if(typing(e))return;
   if(mod&&!e.shiftKey&&!e.altKey){
-    const map={i:()=>openQE(),u:()=>sync(),e:()=>openTriage(),k:()=>S.sel&&toggleDone(S.sel),b:()=>{const a=$('#app');a.style.gridTemplateColumns=a.style.gridTemplateColumns?'':'0 1fr';$('#side').style.display=a.style.gridTemplateColumns?'none':''}};
+    const map={g:()=>S.sel&&openTagPicker(S.sel),j:()=>go('tags'),'.':()=>toggleDensity(),i:()=>openQE(),u:()=>sync(),e:()=>openTriage(),k:()=>S.sel&&toggleDone(S.sel),b:()=>{const a=$('#app');a.style.gridTemplateColumns=a.style.gridTemplateColumns?'':'0 1fr';$('#side').style.display=a.style.gridTemplateColumns?'none':''}};
     if(map[k]){e.preventDefault();map[k]();return}
     if(/^[1-8]$/.test(k)){e.preventDefault();go(VIEWS[+k-1][0]);return}
     return}
@@ -1005,12 +1112,15 @@ document.addEventListener('keydown',e=>{
   if(e.key==='`'){const i=THEMES.findIndex(t=>t.id===S.settings.theme);applyTheme(THEMES[(i+1)%THEMES.length].id);return}
   if(/^[1-8]$/.test(e.key)){go(VIEWS[+e.key-1][0]);return}
   if(k==='n'){openQE();e.preventDefault();return}
+  if(k==='v'){toggleDensity();return}
+  if(k==='f'){go('tags');return}
   if(e.key==='ArrowDown'||k==='j'||e.key==='ArrowUp'||k==='k'){e.preventDefault();if(!ORDER.length)return;const i=ORDER.indexOf(S.sel);const d=(e.key==='ArrowUp'||k==='k')?-1:1;S.sel=ORDER[Math.max(0,Math.min(ORDER.length-1,i<0?0:i+d))];render();const el=$(`.task[data-key="${CSS.escape(S.sel)}"]`);el&&el.scrollIntoView({block:'nearest'});return}
   if(!S.sel)return;
   if(e.key==='Enter'){S.open=S.open===S.sel?null:S.sel;render();return}
   if(e.key===' '||k==='x'){e.preventDefault();toggleDone(S.sel);return}
   const w={t:'today',e:'evening',m:'tomorrow',s:'soon',o:'someday'}[k];if(w){setWhen(S.sel,w);return}
   if(k==='d'){toggleDoing(S.sel);return}
+  if(k==='g'){e.preventDefault();openTagPicker(S.sel);return}
   if(e.key==='Escape'){S.sel=null;S.open=null;render()}
 });
 
@@ -1030,7 +1140,7 @@ async function init(){
   $('#links').innerHTML=DISPLAY.links.map(l=>`<button class="badge" data-link="${l.id}" title="Open ${esc(l.name)}">${esc(l.badge)}</button>`).join('');
   provider=createProvider();buildThemeSelect();
   const had=restore();
-  if(!had||!S.tasks.length){const snap=await provider.load();Object.assign(S,{vault:snap.vault,stewardships:snap.stewardships,projects:snap.projects,tasks:snap.tasks});persist()}
+  if(!had||!S.tasks.length){const snap=await provider.load();Object.assign(S,{tags:snap.tags||[],vault:snap.vault,stewardships:snap.stewardships,projects:snap.projects,tasks:snap.tasks});persist()}
   const q=new URLSearchParams(location.search);if(q.get('theme'))S.settings.theme=q.get('theme');if(q.get('view'))S.view=q.get('view');
   applyTheme(S.settings.theme,{silent:true});scheduleAutoSync();render();
   setInterval(renderTop,30000);
